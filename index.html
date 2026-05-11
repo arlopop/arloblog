@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arlo Blog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#141210;--bg2:#1c1916;--bg3:#242018;
+  --ink:#e8e0cc;--ink2:#a89880;--ink3:#5a5248;
+  --mustard:#d4a017;--orange:#c85a1a;
+  --border:rgba(232,224,204,0.1);--border2:rgba(232,224,204,0.18);
+}
+body.light{
+  --bg:#f0ead8;--bg2:#e6dfc8;--bg3:#ddd6c0;
+  --ink:#1a1612;--ink2:#5a5040;--ink3:#a09080;
+  --border:rgba(26,22,18,0.1);--border2:rgba(26,22,18,0.2);
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'Fira Code',monospace;overflow-x:hidden;cursor:none;transition:background 0.4s,color 0.4s}
+
+/* CURSOR */
+#cursor{position:fixed;width:10px;height:10px;border:1.5px solid var(--mustard);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width 0.2s,height 0.2s,background 0.2s}
+#cursor.big{width:44px;height:44px;background:rgba(212,160,23,0.1)}
+#cursor-dot{position:fixed;width:3px;height:3px;background:var(--orange);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%)}
+
+/* TOPBAR */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content:space-between;align-items:center;padding:1.1rem 2rem;pointer-events:none}
+.topbar>*{pointer-events:auto}
+.nav-logo{font-family:'Fira Code',monospace;font-size:0.9rem;font-weight:700;color:var(--ink);cursor:pointer;letter-spacing:0.02em;transition:color 0.2s}
+.nav-logo span{color:var(--mustard)}
+.nav-logo:hover{color:var(--mustard)}
+.topbar-right{display:flex;gap:0.75rem;align-items:center}
+.topbar-btn{background:var(--bg3);border:1px solid var(--border2);color:var(--ink2);font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.1em;padding:5px 10px;cursor:pointer;transition:all 0.2s}
+.topbar-btn:hover{color:var(--mustard);border-color:var(--mustard)}
+
+/* VIEWS */
+#list-view,#post-view,#admin-view,#login-view{display:none}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 2rem 3rem;position:relative;overflow:hidden;border-bottom:1px solid var(--border2)}
+.hero-bg-text{position:absolute;font-family:'Fira Code',monospace;font-size:22vw;font-weight:700;line-height:0.85;color:rgba(232,224,204,0.03);top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap;pointer-events:none;letter-spacing:-0.04em;transition:transform 0.05s linear}
+body.light .hero-bg-text{color:rgba(26,22,18,0.04)}
+.hero-eyebrow{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--mustard);margin-bottom:1.2rem}
+.hero-title{font-family:'Fira Code',monospace;font-size:clamp(3rem,7.5vw,7rem);font-weight:700;line-height:0.92;letter-spacing:-0.03em;color:var(--ink);max-width:14ch;margin-bottom:2.5rem}
+.hero-title .accent{color:var(--orange)}
+.hero-bottom{display:flex;justify-content:space-between;align-items:flex-end}
+.hero-desc{font-family:'Instrument Serif',Georgia,serif;font-size:1rem;font-style:italic;line-height:1.85;color:var(--ink2);max-width:36ch}
+.hero-scroll{font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--ink3);writing-mode:vertical-rl;animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:0.3}50%{opacity:0.9}}
+
+/* POST LIST */
+.post-row{display:grid;grid-template-columns:56px 1fr 96px;border-bottom:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden}
+.post-row-fill{position:absolute;inset:0;background:var(--orange);transform:translateX(-101%);transition:transform 0.35s cubic-bezier(0.7,0,0.3,1);z-index:0}
+.post-row:hover .post-row-fill{transform:translateX(0)}
+.post-row:hover .pr-num,
+.post-row:hover .pr-content *,
+.post-row:hover .pr-meta{color:rgba(232,224,204,0.9)!important}
+.pr-num{display:flex;align-items:center;justify-content:center;font-family:'Fira Code',monospace;font-weight:700;font-size:0.6rem;color:var(--ink3);border-right:1px solid var(--border);position:relative;z-index:1;letter-spacing:0.08em;transition:color 0.2s}
+.pr-content{padding:1.5rem 1.75rem;position:relative;z-index:1}
+.pr-date{font-size:8px;letter-spacing:0.16em;text-transform:uppercase;color:var(--mustard);margin-bottom:0.35rem;transition:color 0.2s}
+.pr-title{font-family:'Fira Code',monospace;font-size:1.2rem;font-weight:700;letter-spacing:-0.02em;line-height:1.1;color:var(--ink);margin-bottom:0.45rem;transition:color 0.2s}
+.pr-excerpt{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-size:0.875rem;line-height:1.65;color:var(--ink2);max-width:52ch;transition:color 0.2s}
+.pr-meta{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:0 1.25rem 0 0.75rem;font-size:8px;letter-spacing:0.1em;color:var(--ink3);line-height:2.2;border-left:1px solid var(--border);position:relative;z-index:1;transition:color 0.2s}
+.no-posts{padding:3rem 2rem;font-size:0.85rem;color:var(--ink3)}
+
+/* ABOUT STRIP */
+.about-strip{display:grid;grid-template-columns:1fr 1fr;min-height:260px;border-bottom:1px solid var(--border2);border-top:1px solid var(--border2)}
+.al{background:var(--mustard);padding:2.5rem 2rem;display:flex;flex-direction:column;justify-content:space-between}
+.al-label{font-size:8px;letter-spacing:0.22em;text-transform:uppercase;color:rgba(20,18,16,0.4)}
+.al-quote{font-family:'Fira Code',monospace;font-weight:700;font-size:1.2rem;line-height:1.25;color:#141210;letter-spacing:-0.02em;max-width:22ch}
+.al-author{font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(20,18,16,0.4)}
+.ar{padding:2.5rem 2rem;display:flex;flex-direction:column;justify-content:space-between;border-left:1px solid var(--border2);background:var(--bg2);position:relative;overflow:hidden}
+.ar-bg{position:absolute;inset:0;background:radial-gradient(ellipse 70% 70% at 80% 20%,rgba(200,90,26,0.12) 0%,transparent 60%),radial-gradient(ellipse 50% 60% at 10% 80%,rgba(212,160,23,0.08) 0%,transparent 50%);pointer-events:none}
+.ar-text{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-size:0.9rem;line-height:1.85;color:var(--ink2);max-width:36ch;position:relative}
+
+/* FOOTER */
+.footer{padding:1.25rem 2rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border2);background:var(--bg2)}
+.footer-l{font-family:'Fira Code',monospace;font-weight:700;font-size:0.8rem;letter-spacing:0.02em;color:var(--ink2)}
+.footer-l span{color:var(--mustard)}
+.footer-r{font-size:8px;letter-spacing:0.12em;text-transform:uppercase;color:var(--ink3)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity 0.6s ease,transform 0.6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* POST VIEW */
+.pv-back{position:fixed;top:1.2rem;left:2rem;z-index:600;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--border2);padding-bottom:1px;transition:color 0.2s;font-family:'Fira Code',monospace;background:none;border-left:none;border-right:none;border-top:none}
+.pv-back:hover{color:var(--mustard)}
+.pv-hero-img{width:100%;height:400px;object-fit:cover;display:block;border-bottom:1px solid var(--border2)}
+.pv-hero-img.hidden{display:none}
+.pv-header{padding:3.5rem 2rem 2.5rem;border-bottom:1px solid var(--border2);background:var(--bg2)}
+.pv-date{font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:var(--mustard);margin-bottom:1rem;display:block}
+.pv-title{font-family:'Fira Code',monospace;font-weight:700;font-size:clamp(2rem,5vw,4.5rem);line-height:0.95;letter-spacing:-0.03em;color:var(--ink);margin-bottom:1rem}
+.pv-sub{font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-size:1.05rem;color:var(--ink2);line-height:1.6;max-width:44ch}
+.pv-body{max-width:700px;padding:3rem 2rem 5rem;font-family:'Instrument Serif',Georgia,serif;font-size:1.08rem;line-height:2.1;color:var(--ink)}
+.pv-body p{margin-bottom:1.6rem}
+.pv-body p:first-of-type::first-letter{font-family:'Fira Code',monospace;font-weight:700;font-size:4.5rem;float:left;line-height:0.78;margin-right:0.06em;margin-top:0.06em;color:var(--orange)}
+.pv-body blockquote{margin:2.5rem 0;padding:1.5rem 1.75rem;border-left:3px solid var(--mustard);font-style:italic;font-size:1.05rem;line-height:1.85;background:var(--bg2);color:var(--ink2)}
+.pv-body img{width:100%;max-width:100%;height:auto;display:block;margin:2.5rem 0 0;border:1px solid var(--border2)}
+.pv-body .img-caption{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.1em;color:var(--ink3);margin-bottom:2.5rem;padding:0.4rem 0.75rem;background:var(--bg2);border-left:2px solid var(--mustard)}
+.pv-footer{padding:1.5rem 2rem;border-top:1px solid var(--border2);background:var(--bg2)}
+.pv-footer-back{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink2);cursor:pointer;border-bottom:1px solid var(--border2);padding-bottom:1px;transition:color 0.2s;font-family:'Fira Code',monospace;background:none;border-left:none;border-right:none;border-top:none}
+.pv-footer-back:hover{color:var(--mustard)}
+
+/* ADMIN / LOGIN */
+.overlay-view{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;background:var(--bg);padding:6rem 2rem 4rem}
+.panel{width:100%;max-width:720px;background:var(--bg2);border:1px solid var(--border2);padding:2.5rem}
+.panel-title{font-family:'Fira Code',monospace;font-weight:700;font-size:1.1rem;letter-spacing:-0.02em;color:var(--mustard);margin-bottom:0.4rem}
+.panel-sub{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3);margin-bottom:2rem}
+.field{margin-bottom:1.25rem}
+.field label{display:block;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.4rem}
+.field input,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--ink);font-family:'Fira Code',monospace;font-size:0.85rem;padding:0.65rem 0.85rem;outline:none;transition:border-color 0.2s;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--mustard)}
+.field textarea{min-height:200px;line-height:1.7}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.btn-row{display:flex;gap:0.75rem;margin-top:1.75rem;flex-wrap:wrap}
+.btn{font-family:'Fira Code',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;padding:0.65rem 1.25rem;border:1px solid var(--border2);background:transparent;color:var(--ink2);cursor:pointer;transition:all 0.2s}
+.btn:hover{border-color:var(--mustard);color:var(--mustard)}
+.btn.primary{background:var(--mustard);border-color:var(--mustard);color:#141210;font-weight:700}
+.btn.primary:hover{background:var(--orange);border-color:var(--orange);color:#fff}
+.btn.danger:hover{border-color:var(--orange);color:var(--orange)}
+.help-text{font-size:9px;letter-spacing:0.06em;color:var(--ink3);margin-top:0.4rem;line-height:1.7}
+.notice{font-size:9px;letter-spacing:0.1em;color:var(--mustard);padding:0.5rem 0;display:none}
+.admin-list{margin-top:2.5rem;border-top:1px solid var(--border)}
+.admin-list-label{padding:0.75rem 0 0.25rem;font-size:8px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink3)}
+.admin-item{display:flex;justify-content:space-between;align-items:center;padding:0.85rem 0;border-bottom:1px solid var(--border);gap:1rem}
+.admin-item-title{font-size:0.85rem;font-weight:700;color:var(--ink);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-item-date{font-size:8px;letter-spacing:0.1em;color:var(--ink3);white-space:nowrap}
+.admin-item-btns{display:flex;gap:0.5rem;flex-shrink:0}
+.admin-item-btns button{font-family:'Fira Code',monospace;font-size:8px;letter-spacing:0.1em;padding:3px 8px;border:1px solid var(--border2);background:transparent;color:var(--ink3);cursor:pointer;transition:all 0.2s}
+.admin-item-btns button:hover{color:var(--mustard);border-color:var(--mustard)}
+.admin-item-btns button.del:hover{color:var(--orange);border-color:var(--orange)}
+
+/* LOGIN CENTERED */
+#login-view{align-items:center;min-height:100vh}
+#login-view .panel{max-width:400px}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
+
+<div class="topbar">
+  <div class="nav-logo" onclick="showList()"><span>//</span> Arlo Blog</div>
+  <div class="topbar-right">
+    <button class="topbar-btn" id="mode-btn" onclick="toggleMode()">[ light ]</button>
+    <button class="topbar-btn" onclick="showLogin()">[ admin ]</button>
+  </div>
+</div>
+
+<!-- ===================== LIST VIEW ===================== -->
+<div id="list-view">
+  <section class="hero">
+    <div class="hero-bg-text" id="hero-bg">arlo</div>
+    <div class="hero-eyebrow">// writing by arlo — est. 2025</div>
+    <h1 class="hero-title">things I <span class="accent">noticed</span></h1>
+    <div class="hero-bottom">
+      <p class="hero-desc">A place for essays, observations, fiction, and whatever else seems worth saying out loud.</p>
+      <span class="hero-scroll">scroll ↓</span>
+    </div>
+  </section>
+
+  <section id="post-list"></section>
+
+  <div class="about-strip reveal">
+    <div class="al">
+      <span class="al-label">// about</span>
+      <div class="al-quote">"writing is the only way I know to find out what I think about something."</div>
+      <span class="al-author">— arlo</span>
+    </div>
+    <div class="ar">
+      <div class="ar-bg"></div>
+      <p class="ar-text">Pre-law student, bikepacker, occasional writer. Based in Logan, Utah. This blog is a thinking-out-loud kind of place.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span class="footer-l"><span>//</span> Arlo Blog</span>
+    <span class="footer-r">©2025 — all writing original</span>
+  </footer>
+</div>
+
+<!-- ===================== POST VIEW ===================== -->
+<div id="post-view">
+  <button class="pv-back" onclick="showList()">← all posts</button>
+  <img id="pv-hero-img" class="pv-hero-img hidden" src="" alt="Post hero image">
+  <div class="pv-header">
+    <span class="pv-date" id="pv-date"></span>
+    <h1 class="pv-title" id="pv-title"></h1>
+    <p class="pv-sub" id="pv-sub"></p>
+  </div>
+  <div class="pv-body" id="pv-body"></div>
+  <div class="pv-footer">
+    <button class="pv-footer-back" onclick="showList()">← all posts</button>
+  </div>
+</div>
+
+<!-- ===================== LOGIN VIEW ===================== -->
+<div id="login-view" class="overlay-view">
+  <div class="panel">
+    <div class="panel-title">// admin access</div>
+    <div class="panel-sub">enter password to continue</div>
+    <div class="field">
+      <label>password</label>
+      <input type="password" id="pw-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="notice" id="pw-notice">// incorrect password</div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="doLogin()">enter →</button>
+      <button class="btn" onclick="showList()">cancel</button>
+    </div>
+    <p class="help-text" style="margin-top:1.5rem">
+      // default password: <span style="color:var(--mustard)">arlo2025</span><br>
+      to change it: open index.html, find <span style="color:var(--mustard)">const ADMIN_PW</span> near the top of the script and update it.
+    </p>
+  </div>
+</div>
+
+<!-- ===================== ADMIN VIEW ===================== -->
+<div id="admin-view" class="overlay-view">
+  <div class="panel">
+    <div class="panel-title" id="form-title">// new post</div>
+    <div class="panel-sub">all fields except subtitle and images are required</div>
+
+    <input type="hidden" id="edit-id">
+
+    <div class="field">
+      <label>title</label>
+      <input type="text" id="f-title" placeholder="Post title">
+    </div>
+    <div class="field">
+      <label>subtitle <span style="color:var(--ink3)">(optional — shows under title)</span></label>
+      <input type="text" id="f-sub" placeholder="A short line under the title">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>date</label>
+        <input type="text" id="f-date" placeholder="May 11, 2025">
+      </div>
+      <div class="field">
+        <label>read time</label>
+        <input type="text" id="f-time" placeholder="5 min read">
+      </div>
+    </div>
+    <div class="field">
+      <label>hero image URL <span style="color:var(--ink3)">(optional)</span></label>
+      <input type="text" id="f-heroimg" placeholder="https://...">
+      <p class="help-text">paste any public image URL — shows as a full-width banner at the top of the post</p>
+    </div>
+    <div class="field">
+      <label>body</label>
+      <textarea id="f-body" placeholder="Write your post here..."></textarea>
+      <p class="help-text">
+        Paragraph: &lt;p&gt;your text&lt;/p&gt;<br>
+        Blockquote: &lt;blockquote&gt;quoted text&lt;/blockquote&gt;<br>
+        Inline image: &lt;img src="https://..."&gt;<br>
+        Image caption: &lt;div class="img-caption"&gt;caption text&lt;/div&gt;
+      </p>
+    </div>
+
+    <div class="notice" id="form-notice"></div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="savePost()">save post →</button>
+      <button class="btn" onclick="clearForm()">clear form</button>
+      <button class="btn" onclick="showList()">← back to blog</button>
+    </div>
+
+    <div class="admin-list" id="admin-list"></div>
+  </div>
+</div>
+
+<script>
+// =============================================
+// CHANGE YOUR PASSWORD HERE
+// =============================================
+const ADMIN_PW = 'arlo2025';
+
+// =============================================
+// DATA — stored in localStorage so posts persist
+// =============================================
+let posts = JSON.parse(localStorage.getItem('arlo_posts') || 'null');
+if (!posts) {
+  posts = [
+    {
+      id: 1,
+      title: 'The Cartography of Forgetting',
+      sub: 'On memory, place, and the maps we can no longer read.',
+      date: 'April 14, 2025',
+      time: '8 min read',
+      heroImg: '',
+      body: `<p>There is a town I grew up near that I can no longer fully picture. I know it was there. I know there was a hardware store that smelled of oil and sawdust, a library with carpet the color of a bruise, a hill on the east side of town that seemed enormous until I was eleven, and ordinary after that.</p>
+<blockquote>Memory is less an archive than an ongoing act of composition. Each retrieval is also a revision.</blockquote>
+<p>I have taken to calling it cartographic loss: the erasure not of the place itself, but of the map you once carried of it. The place persists, presumably. What is gone is your particular version of it — your knowledge of which road to take, your memory of the smell of the air on a specific October morning in a year you can no longer reliably name.</p>`
+    },
+    {
+      id: 2,
+      title: 'Three Kinds of Silence',
+      sub: "A short story about what doesn't get said over breakfast.",
+      date: 'March 28, 2025',
+      time: '12 min read',
+      heroImg: '',
+      body: `<p>The kettle had been whistling for a minute before either of them moved. It was the kind of morning that announces itself as important before you know why — the light too clear, the air too still, everything slightly too present.</p>
+<blockquote>There are silences that are comfortable and silences that are the shape of something unsaid. The difficult work is learning to tell them apart.</blockquote>
+<p>Martin got up. He was always the one who got up. He didn't mind this, or told himself he didn't, which had started to feel like the same thing. He made two cups, set one in front of her. She said thank you, the way she always said it: quietly, meaning it.</p>`
+    },
+    {
+      id: 3,
+      title: 'Notes on Rereading',
+      sub: 'The same book is never the same book twice.',
+      date: 'December 19, 2024',
+      time: '5 min read',
+      heroImg: '',
+      body: `<p>A book you return to is never the same book. The words are identical. Everything else — you, the time, what you needed when you first read it — has shifted in the interval, sometimes by so much you wonder how you arrived where you arrived.</p>
+<blockquote>Perhaps we return to books looking for the reader we used to be, and find instead that they are no longer home.</blockquote>
+<p>The experience is like finding an old letter you wrote — surprised both by the person you were and by the fact that you still recognize them at all.</p>`
+    }
+  ];
+  savePosts();
+}
+
+function savePosts() {
+  localStorage.setItem('arlo_posts', JSON.stringify(posts));
+}
+
+// =============================================
+// CURSOR
+// =============================================
+const cur = document.getElementById('cursor');
+const dot = document.getElementById('cursor-dot');
+let mx = 0, my = 0, cx = 0, cy = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+});
+
+(function animCursor() {
+  cx += (mx - cx) * 0.16;
+  cy += (my - cy) * 0.16;
+  cur.style.left = cx + 'px'; cur.style.top = cy + 'px';
+  requestAnimationFrame(animCursor);
+})();
+
+document.addEventListener('mouseover', e => {
+  if (e.target.closest('a, button, .post-row, .nav-logo, .topbar-btn')) {
+    cur.classList.add('big');
+  } else {
+    cur.classList.remove('big');
+  }
+});
+
+// =============================================
+// DARK / LIGHT MODE
+// =============================================
+let isLight = false;
+function toggleMode() {
+  isLight = !isLight;
+  document.body.classList.toggle('light', isLight);
+  document.getElementById('mode-btn').textContent = isLight ? '[ dark ]' : '[ light ]';
+}
+
+// =============================================
+// HERO PARALLAX
+// =============================================
+const heroBg = document.getElementById('hero-bg');
+
+document.addEventListener('mousemove', e => {
+  if (document.getElementById('list-view').style.display === 'none') return;
+  const rx = (e.clientX / window.innerWidth - 0.5) * 20;
+  const ry = (e.clientY / window.innerHeight - 0.5) * 10;
+  heroBg.style.transform = `translate(calc(-50% + ${rx}px), calc(-50% + ${ry}px))`;
+});
+
+window.addEventListener('scroll', () => {
+  heroBg.style.transform = `translate(-50%, calc(-50% + ${window.scrollY * 0.28}px))`;
+});
+
+// =============================================
+// SCROLL REVEAL
+// =============================================
+const revealObs = new IntersectionObserver(entries => {
+  entries.forEach((en, i) => {
+    if (en.isIntersecting) {
+      setTimeout(() => en.target.classList.add('visible'), i * 70);
+      revealObs.unobserve(en.target);
+    }
+  });
+}, { threshold: 0.08 });
+
+function observeReveals() {
+  document.querySelectorAll('.reveal:not(.visible)').forEach(r => revealObs.observe(r));
+}
+
+// =============================================
+// RENDER POST LIST
+// =============================================
+function renderList() {
+  const el = document.getElementById('post-list');
+  if (!posts.length) {
+    el.innerHTML = '<p class="no-posts">// no posts yet — add one from the admin panel</p>';
+    return;
+  }
+  el.innerHTML = posts.map((p, i) => `
+    <div class="post-row reveal" onclick="showPost(${p.id})">
+      <div class="post-row-fill"></div>
+      <div class="pr-num">${String(i + 1).padStart(2, '0')}</div>
+      <div class="pr-content">
+        <div class="pr-date">${p.date}</div>
+        <div class="pr-title">${p.title}</div>
+        ${p.sub ? `<div class="pr-excerpt">${p.sub}</div>` : ''}
+      </div>
+      <div class="pr-meta"><span>${p.time}</span></div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.post-row').forEach(row => {
+    row.addEventListener('mousemove', e => {
+      const r = row.getBoundingClientRect();
+      const y = (e.clientY - r.top) / r.height - 0.5;
+      row.style.transform = `skewY(${y * 1.8}deg)`;
+    });
+    row.addEventListener('mouseleave', () => row.style.transform = 'skewY(0deg)');
+  });
+
+  observeReveals();
+}
+
+// =============================================
+// VIEW SWITCHING
+// =============================================
+function hideAll() {
+  ['list-view', 'post-view', 'admin-view', 'login-view'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+}
+
+function showList() {
+  hideAll();
+  document.getElementById('list-view').style.display = 'block';
+  renderList();
+  window.scrollTo(0, 0);
+}
+
+function showPost(id) {
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('pv-date').textContent = p.date + ' · ' + p.time;
+  document.getElementById('pv-title').textContent = p.title;
+  document.getElementById('pv-sub').textContent = p.sub || '';
+  const hi = document.getElementById('pv-hero-img');
+  if (p.heroImg) { hi.src = p.heroImg; hi.classList.remove('hidden'); }
+  else { hi.src = ''; hi.classList.add('hidden'); }
+  document.getElementById('pv-body').innerHTML = p.body;
+  hideAll();
+  document.getElementById('post-view').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function showLogin() {
+  hideAll();
+  document.getElementById('login-view').style.display = 'flex';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-notice').style.display = 'none';
+}
+
+function doLogin() {
+  if (document.getElementById('pw-input').value === ADMIN_PW) {
+    showAdmin();
+  } else {
+    document.getElementById('pw-notice').style.display = 'block';
+  }
+}
+
+function showAdmin() {
+  hideAll();
+  document.getElementById('admin-view').style.display = 'flex';
+  clearForm();
+  renderAdminList();
+  window.scrollTo(0, 0);
+}
+
+// =============================================
+// ADMIN PANEL
+// =============================================
+function renderAdminList() {
+  const el = document.getElementById('admin-list');
+  if (!posts.length) {
+    el.innerHTML = '<p class="admin-list-label">// no posts yet</p>';
+    return;
+  }
+  el.innerHTML = '<p class="admin-list-label">// existing posts — click edit to modify</p>' +
+    posts.map(p => `
+      <div class="admin-item">
+        <div class="admin-item-title">${p.title}</div>
+        <div class="admin-item-date">${p.date}</div>
+        <div class="admin-item-btns">
+          <button onclick="editPost(${p.id})">edit</button>
+          <button class="del" onclick="deletePost(${p.id})">delete</button>
+        </div>
+      </div>
+    `).join('');
+}
+
+function clearForm() {
+  document.getElementById('edit-id').value = '';
+  document.getElementById('f-title').value = '';
+  document.getElementById('f-sub').value = '';
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('f-date').value = today;
+  document.getElementById('f-time').value = '';
+  document.getElementById('f-heroimg').value = '';
+  document.getElementById('f-body').value = '';
+  document.getElementById('form-title').textContent = '// new post';
+  document.getElementById('form-notice').style.display = 'none';
+}
+
+function editPost(id) {
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('f-title').value = p.title;
+  document.getElementById('f-sub').value = p.sub || '';
+  document.getElementById('f-date').value = p.date;
+  document.getElementById('f-time').value = p.time;
+  document.getElementById('f-heroimg').value = p.heroImg || '';
+  document.getElementById('f-body').value = p.body;
+  document.getElementById('form-title').textContent = '// editing: ' + p.title;
+  window.scrollTo(0, 0);
+}
+
+function savePost() {
+  const title = document.getElementById('f-title').value.trim();
+  const body = document.getElementById('f-body').value.trim();
+  const date = document.getElementById('f-date').value.trim();
+  const time = document.getElementById('f-time').value.trim();
+  const notice = document.getElementById('form-notice');
+
+  if (!title || !body || !date || !time) {
+    notice.textContent = '// title, date, read time, and body are all required';
+    notice.style.color = 'var(--orange)';
+    notice.style.display = 'block';
+    return;
+  }
+
+  const editId = document.getElementById('edit-id').value;
+  const postData = {
+    title,
+    sub: document.getElementById('f-sub').value.trim(),
+    date,
+    time,
+    heroImg: document.getElementById('f-heroimg').value.trim(),
+    body
+  };
+
+  if (editId) {
+    const idx = posts.findIndex(x => x.id === parseInt(editId));
+    if (idx > -1) posts[idx] = { ...posts[idx], ...postData };
+  } else {
+    posts.unshift({ id: Date.now(), ...postData });
+  }
+
+  savePosts();
+  clearForm();
+  renderAdminList();
+  notice.textContent = '// post saved ✓';
+  notice.style.color = 'var(--mustard)';
+  notice.style.display = 'block';
+  setTimeout(() => notice.style.display = 'none', 2500);
+}
+
+function deletePost(id) {
+  if (!confirm('Delete this post? This cannot be undone.')) return;
+  posts = posts.filter(x => x.id !== id);
+  savePosts();
+  renderAdminList();
+  renderList();
+}
+
+// =============================================
+// INIT
+// =============================================
+showList();
+</script>
+</body>
+</html>
